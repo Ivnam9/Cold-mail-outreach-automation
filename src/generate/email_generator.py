@@ -45,13 +45,30 @@ def salutation(name: str) -> str:
 
 def build_background(domain_name: str, domain_cfg: dict, cfg: dict) -> str:
     projects = {p["id"]: p["text"].strip() for p in cfg["flagship_projects"]}
-    order = domain_cfg.get("lead_order") or list(projects.keys())
+
+    order = domain_cfg.get("lead_order")
+    if order is None:
+        order = list(projects.keys())
+    elif not order:
+        raise ValueError(
+            f"domain '{domain_name}' has an empty lead_order — add at least one "
+            f"flagship_projects id, or omit lead_order entirely to use the default "
+            f"order. An empty list would otherwise silently fall back to whichever "
+            f"projects come first in flagship_projects, which may not be this "
+            f"domain's own."
+        )
+
     lead_text = projects[order[0]]
     follow_text = projects[order[1]] if len(order) > 1 else ""
 
     parts = [lead_text]
     if follow_text:
-        parts.append(f"Separately, {follow_text[0].lower()}{follow_text[1:]}")
+        # Lowercase the join word's first letter to blend into "Separately, ..." -
+        # except when that first letter is the standalone pronoun "I", which must
+        # stay capitalized ("Separately, I built..." not "Separately, i built...").
+        lead_char = follow_text[0]
+        follow_lower = lead_char if lead_char == "I" else lead_char.lower()
+        parts.append(f"Separately, {follow_lower}{follow_text[1:]}")
 
     sp_id = domain_cfg.get("secondary_project")
     if sp_id:
