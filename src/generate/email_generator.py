@@ -51,7 +51,7 @@ def build_background(domain_name: str, domain_cfg: dict, cfg: dict) -> str:
 
     parts = [lead_text]
     if follow_text:
-        parts.append(f"Separately, {follow_text[0].lower()}{follow_text[1:]}")
+        parts.append(f"Separately, {follow_text}")
 
     sp_id = domain_cfg.get("secondary_project")
     if sp_id:

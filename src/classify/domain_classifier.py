@@ -26,13 +26,20 @@ import re
 
 
 def score_bio(bio: str, domains: dict) -> dict:
-    """Return {domain_name: hit_count} for every domain whose keywords appear in bio."""
-    b = " " + bio.lower() + " "
+    """Return {domain_name: hit_count} using whole-phrase keyword matches."""
+    b = bio.lower()
     scores = {}
+
     for name, cfg in domains.items():
-        c = sum(b.count(kw.lower()) for kw in cfg.get("keywords", []))
-        if c:
-            scores[name] = c
+        count = 0
+
+        for kw in cfg.get("keywords", []):
+            pattern = r"(?<!\w)" + re.escape(kw.lower()) + r"(?!\w)"
+            count += len(re.findall(pattern, b))
+
+        if count:
+            scores[name] = count
+
     return scores
 
 
