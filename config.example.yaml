@@ -71,6 +71,25 @@ templates:
 #                     sentence when this bucket is assigned. Omit or leave blank for none.
 #   weak_fit       - true for buckets with no real project overlap. These get an honest,
 #                     openly generic email instead of a forced/stretched personalization.
+# Domain-specific resumes. Keys must match the `domains` names above exactly — every
+# generated email gets its `resume_path` from here (see email_generator.py:process and
+# resume_for in mailer_notebook.ipynb / send_batch.py, which read it per-row rather
+# than attaching one fixed resume to every email). Point each at your own resume PDF;
+# several domains can share one file if you don't keep separate versions.
+#
+# If your own domains are e.g. Finance / FinTech / AI_ML rather than the research
+# buckets below, rename `domains` and `resumes` together — every key in `domains` must
+# have a matching entry here, or email_generator.py raises rather than guessing.
+resumes:
+  ML: "./resumes/ml_resume.pdf"
+  NLP: "./resumes/ml_resume.pdf"
+  CV: "./resumes/ml_resume.pdf"
+  Stats: "./resumes/quant_resume.pdf"
+  Robotics: "./resumes/ml_resume.pdf"
+  Medicine: "./resumes/ml_resume.pdf"
+  HCI: "./resumes/general_resume.pdf"
+  CS: "./resumes/general_resume.pdf"
+
 domains:
   ML:
     keywords: ["machine learning", "deep learning", "reinforcement learning", "artificial intelligence", " ai "]

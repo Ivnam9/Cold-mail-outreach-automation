@@ -38,6 +38,16 @@ up individually rather than leaving "Dean" as their stated research area.
 on an official page. A blank field is honest; a guessed `firstname.lastname@domain.edu`
 produces bounces and reads as careless if it lands on a monitored catch-all inbox.
 
+**Every record also needs the recipient's university/location and IANA timezone**
+(`"university"` and `"timezone"`, e.g. `"America/New_York"`) — this is what lets the sender
+enforce the Tue/Thu 7:30-9:30 AM window in *their* local time rather than the sender's. Since
+a scraper targets one site at a time, every person it returns shares the same institution and
+(almost always) the same timezone, so pass both in as fixed arguments to the scraper function
+instead of trying to detect them per-person. Look up the correct zone for the institution's
+actual city rather than guessing, and never default to IST or any other zone — an invalid or
+missing timezone is rejected loudly downstream (`src/schedule/scheduling.py`) rather than
+silently mis-scheduling that person's email.
+
 ## 2. Classify
 
 `src/classify/domain_classifier.py` scores a bio's lowercase text against each domain's
@@ -104,6 +114,24 @@ be surprising — it's a straightforward `openpyxl` workbook builder
 (`src/export/build_workbook.py`).
 
 ## 5. Send
+
+**Every row only sends inside its own Tue/Thu 7:30-9:30 AM window, in the recipient's own
+local timezone** (`src/schedule/scheduling.py`, gated in `src/send/send_batch.py` via
+`build_queue`/`is_due_now` and mirrored in the notebook). This is checked fresh on every run
+against the real current time — never a precomputed date, and never the sender's own
+timezone or a hard-coded "IST" assumption. `zoneinfo` (the stdlib IANA tz database) handles
+DST transitions correctly, so the same recipient-local wall-clock time maps to a different
+UTC instant in summer vs. winter automatically.
+
+Because eligibility is just "is it due right now?", there's no long-running scheduler process
+to keep alive between sends — that's what makes this compatible with Windows Task Scheduler
+(or `cron`) instead of a Python process that has to stay up for days. Point Task Scheduler at
+`send_batch.py` on a recurring trigger (every 15-30 minutes is plenty); each run queues
+whatever rows are due *right now*, sends them, and exits. A row that isn't due yet is skipped
+(not logged — it was never attempted) and picked up automatically on a later run once its
+window opens, so future Tuesdays and Thursdays keep getting served with no manual
+re-scheduling. A row with a missing or invalid `timezone` is skipped with a clear reason
+rather than ever being sent blind.
 
 Two sender implementations, same underlying logic:
 

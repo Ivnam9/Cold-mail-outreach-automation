@@ -4,11 +4,22 @@ Windows Task Scheduler for a scheduled send. All credentials come from environme
 variables (see .env.example) — never hardcode a token or address here.
 
 CSV columns expected:
-    send (yes/no), name, email, subject, email_body, resume_path
+    send (yes/no), name, email, subject, email_body, resume_path, timezone
 
-Rows with send != yes, or a missing subject/email_body/resume_path, are skipped.
-Already-sent rows (tracked in sent_log_<batch>.csv) are skipped automatically, so
-re-running never double-sends.
+Rows with send != yes, or a missing subject/email_body/resume_path/timezone, are
+skipped. Already-sent rows (tracked in sent_log_<batch>.csv) are skipped
+automatically, so re-running never double-sends.
+
+`timezone` is the recipient's own IANA timezone (e.g. "America/New_York" — see
+src/scrape/scraping_patterns.py for where it comes from). A row is only ever sent
+when, converted into THAT timezone, right now falls on a Tuesday or Thursday between
+7:30 and 9:30 AM — never the sender's local time, never a hard-coded "IST" assumption.
+See src/schedule/scheduling.py for the window logic.
+
+Because each run only sends whatever is due *right now*, this script needs no
+long-running process to "wait" for a future Tue/Thu — just invoke it periodically
+(e.g. every 15-30 minutes) from `cron` or Windows Task Scheduler and it will pick up
+newly-due rows on its own, indefinitely, without any date ever being hard-coded.
 
 Usage:
     python send_batch.py --batch data/batch_01.csv [--delay 60] [--limit N]
@@ -38,6 +49,9 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from schedule.scheduling import is_due_now  # noqa: E402
 
 UTF8_QP = Charset("utf-8")
 UTF8_QP.body_encoding = QP
@@ -109,6 +123,76 @@ def build_message(
     msg.attach(part)
 
     return msg
+
+
+def load_already_sent(log_path: Path) -> set:
+    """Emails with a logged status of "sent" for this batch — checked before queuing
+    so a re-run (e.g. the next scheduled Task Scheduler pass) never double-sends."""
+    if not log_path.exists():
+        return set()
+    with open(log_path, newline="", encoding="utf-8") as f:
+        return {
+            r["email"]
+            for r in csv.DictReader(f)
+            if r.get("status") == "sent"
+        }
+
+
+def build_queue(
+    rows: list,
+    already_sent: set,
+    now_utc: datetime = None,
+) -> tuple:
+    """Filter batch rows down to the ones actually eligible to send right now.
+
+    Returns (queue, skipped) where `skipped` is a list of (row, reason) pairs, purely
+    for reporting — skipped rows are never logged (they were never attempted), so a
+    row missing its timezone or outside the send window today is picked up again
+    automatically on a later run, with no state to reset.
+
+    `now_utc` lets tests check a specific moment instead of the real current time;
+    left as None (the default) for real sends, which always use "now".
+    """
+    queue = []
+    skipped = []
+
+    for row in rows:
+        if row.get("send", "").strip().lower() != "yes":
+            skipped.append((row, "send != yes"))
+            continue
+
+        if row.get("email") in already_sent:
+            skipped.append((row, "already sent"))
+            continue
+
+        if not (
+            row.get("subject")
+            and row.get("email_body")
+            and row.get("resume_path")
+        ):
+            skipped.append((row, "missing subject/email_body/resume_path"))
+            continue
+
+        tz_name = (row.get("timezone") or "").strip()
+        if not tz_name:
+            skipped.append((row, "missing timezone - cannot verify send window"))
+            continue
+
+        try:
+            due = is_due_now(tz_name, now_utc=now_utc)
+        except ValueError as e:
+            skipped.append((row, f"invalid timezone: {e}"))
+            continue
+
+        if not due:
+            skipped.append(
+                (row, f"outside Tue/Thu 7:30-9:30 AM local window ({tz_name})")
+            )
+            continue
+
+        queue.append(row)
+
+    return queue, skipped
 
 
 def log_send(
@@ -195,48 +279,29 @@ def main():
         / f"sent_log_{batch_name}.csv"
     )
 
-    already_sent = set()
-
-    if log_path.exists():
-        with open(
-            log_path,
-            newline="",
-            encoding="utf-8",
-        ) as f:
-            already_sent = {
-                r["email"]
-                for r in csv.DictReader(f)
-                if r.get("status") == "sent"
-            }
-
-    queue = []
+    already_sent = load_already_sent(log_path)
 
     with open(
         batch_path,
         newline="",
         encoding="utf-8",
     ) as f:
-        for row in csv.DictReader(f):
+        rows = list(csv.DictReader(f))
 
-            if row.get("send", "").strip().lower() != "yes":
-                continue
-
-            if row["email"] in already_sent:
-                continue
-
-            if not (
-                row.get("subject")
-                and row.get("email_body")
-                and row.get("resume_path")
-            ):
-                continue
-
-            queue.append(row)
+    queue, skipped = build_queue(rows, already_sent)
 
     if args.limit:
         queue = queue[: args.limit]
 
     print(f"Queued: {len(queue)}")
+
+    if skipped:
+        reason_counts = {}
+        for _, reason in skipped:
+            reason_counts[reason] = reason_counts.get(reason, 0) + 1
+        print(f"Skipped: {len(skipped)}")
+        for reason, count in reason_counts.items():
+            print(f"  {count}x {reason}")
 
     if not queue:
         return

@@ -1,3 +1,8 @@
 openpyxl>=3.1
 PyYAML>=6.0
 python-dotenv>=1.0
+# IANA timezone data for the stdlib `zoneinfo` module (src/schedule/scheduling.py).
+# Linux/macOS normally already have a system tz database and work without this, but
+# Windows does not ship one — zoneinfo falls back to this package automatically when
+# present. Harmless to always install.
+tzdata>=2024.1

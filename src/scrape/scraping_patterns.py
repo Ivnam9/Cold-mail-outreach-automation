@@ -5,13 +5,26 @@ site is different — but in practice most fall into one of these three buckets.
 which one your target site is, then adapt the matching function below.
 
 Output schema everywhere in this pipeline: a list of
-    {"name": str, "email": str | None, "title": str, "bio": str}
+    {"name": str, "email": str | None, "title": str, "bio": str,
+     "university": str, "timezone": str}
 Write your adapted scraper to emit exactly this.
 
 NEVER fabricate or pattern-guess an email address (e.g. assuming
 firstname.lastname@department.edu). Only set `email` when you found it actually
 published on the page. Leave it None otherwise — a blank field is honest, a guessed
 one bounces.
+
+`university` and `timezone` are the recipient's institution/lab name and its IANA
+timezone (e.g. "America/New_York", "Europe/London", "Asia/Kolkata") — used downstream
+to enforce the Tue/Thu 7:30-9:30 AM *recipient-local* send window (see
+`src/schedule/scheduling.py`). A scraper targets one site at a time, so every person it
+returns shares the same institution and (almost always) the same timezone — pass both
+in as fixed arguments to the scraper function rather than trying to detect them
+per-person. Look the correct IANA zone up for the institution's actual city (e.g. from
+its campus address) rather than guessing; never default to IST or any other zone.
+`resolve_zone()` in `src/schedule/scheduling.py` will raise a clear error if the name
+you used isn't a real IANA zone, so a typo fails loudly instead of silently
+mis-scheduling every email for that person.
 """
 import json
 import re
@@ -41,7 +54,15 @@ def fetch(url: str) -> str:
 # (`?slug=a,b,c,d`) down to just 1-2 results with no error — always fetch one slug at
 # a time in production, even though batching multiple slugs together looks tempting.
 
-def scrape_wordpress_profile(base_url: str, post_type: str, slug: str) -> dict:
+def scrape_wordpress_profile(
+    base_url: str,
+    post_type: str,
+    slug: str,
+    university: str,
+    timezone: str,
+) -> dict:
+    """`university`/`timezone` describe the site being scraped (fixed per scraper run
+    — see the module docstring), not anything pulled from the page itself."""
     url = f"{base_url}/wp-json/wp/v2/{post_type}?slug={slug}&_fields=title,content"
     data = json.loads(fetch(url))
     if not data:
@@ -52,7 +73,14 @@ def scrape_wordpress_profile(base_url: str, post_type: str, slug: str) -> dict:
     bio = re.sub(r"<[^>]+>", " ", content_html)
     bio = re.sub(r"\s{2,}", " ", bio).strip()
     emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", content_html)
-    return {"name": title, "email": emails[0] if emails else None, "title": "", "bio": bio}
+    return {
+        "name": title,
+        "email": emails[0] if emails else None,
+        "title": "",
+        "bio": bio,
+        "university": university,
+        "timezone": timezone,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +93,9 @@ def scrape_wordpress_profile(base_url: str, post_type: str, slug: str) -> dict:
 # "description":"..." key. Anchor your regex to the field that comes right after
 # "identifier" so you don't accidentally grab the wrong one.
 
-def scrape_jsonld_profile(html: str) -> dict:
+def scrape_jsonld_profile(html: str, university: str, timezone: str) -> dict:
+    """`university`/`timezone` describe the site being scraped (fixed per scraper run
+    — see the module docstring), not anything pulled from the page itself."""
     m = re.search(r'"identifier":"([^"]*)","description":"((?:[^"\\]|\\.)*)"', html)
     if not m:
         return {}
@@ -75,7 +105,14 @@ def scrape_jsonld_profile(html: str) -> dict:
     bio = re.sub(r"<[^>]+>", " ", bio)
     bio = re.sub(r"\s{2,}", " ", bio).strip()
     emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
-    return {"name": name, "email": emails[0] if emails else None, "title": "", "bio": bio}
+    return {
+        "name": name,
+        "email": emails[0] if emails else None,
+        "title": "",
+        "bio": bio,
+        "university": university,
+        "timezone": timezone,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +133,9 @@ def scrape_jsonld_profile(html: str) -> dict:
 # overwritten by whatever's most "important" about the person from the site's point
 # of view), look those specific few up individually rather than leaving them with a
 # meaningless "President's Chair Professor" as their stated research topic.
+#
+# Like the other two patterns, attach the same fixed `university`/`timezone` pair to
+# every record this parser emits (one department page = one institution = one zone).
 
 
 # ---------------------------------------------------------------------------

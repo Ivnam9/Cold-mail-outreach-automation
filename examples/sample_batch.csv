@@ -1,4 +1,4 @@
-send,name,email,subject,email_body
+send,name,email,subject,email_body,resume_path,timezone
 yes,Alex Morgan,alex.morgan@example.edu,Interest in your research on machine learning and graph mining,"Dear Prof. Alex Morgan,
 
 I hope this message finds you well.
@@ -14,7 +14,7 @@ My resume is attached for your reference. Thank you for your time and considerat
 Warm regards,
 Jordan Rivera
 B.Tech. Computer Science
-Example Institute of Technology"
+Example Institute of Technology",./resumes/ml_resume.pdf,America/New_York
 yes,Sam Okafor,sam.okafor@example.edu,Interest in your research on computer vision and multimodal learning,"Dear Prof. Sam Okafor,
 
 I hope this message finds you well.
@@ -30,7 +30,7 @@ My resume is attached for your reference. Thank you for your time and considerat
 Warm regards,
 Jordan Rivera
 B.Tech. Computer Science
-Example Institute of Technology"
+Example Institute of Technology",./resumes/ml_resume.pdf,Europe/London
 yes,Jordan Lee,jordan.lee@example.edu,Interest in collaborating with your research group,"Dear Prof. Jordan Lee,
 
 I hope this message finds you well.
@@ -46,4 +46,4 @@ My resume is attached for your reference. Thank you for your time and considerat
 Warm regards,
 Jordan Rivera
 B.Tech. Computer Science
-Example Institute of Technology"
+Example Institute of Technology",./resumes/general_resume.pdf,Australia/Sydney

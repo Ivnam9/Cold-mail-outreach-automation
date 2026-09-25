@@ -17,6 +17,8 @@ HEADERS = [
     "Email",
     "Designation",
     "Research Description",
+    "University",
+    "Timezone",
     "Subject",
     "Personalized Email",
     "Resume Path",
@@ -27,9 +29,11 @@ COLUMN_WIDTHS = {
     "B": 32,
     "C": 38,
     "D": 70,
-    "E": 45,
-    "F": 100,
-    "G": 65,
+    "E": 30,
+    "F": 22,
+    "G": 45,
+    "H": 100,
+    "I": 65,
 }
 
 HEADER_FILL = PatternFill(
@@ -67,6 +71,8 @@ def build(records: list, out_path: str) -> None:
                 r.get("email") or "",
                 r.get("title", ""),
                 r.get("bio", ""),
+                r.get("university", ""),
+                r.get("timezone", ""),
                 r.get("subject", ""),
                 r.get("email_draft", ""),
                 r.get("resume_path", ""),
