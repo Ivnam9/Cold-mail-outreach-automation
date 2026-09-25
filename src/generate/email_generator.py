@@ -9,7 +9,8 @@ Input schema (professors.json): a JSON list of
     {"name": str, "email": str | null, "title": str, "bio": str}
 
 Output schema (emails.json): the same records plus
-    {"domain_bucket": str, "topic": str, "subject": str, "email_draft": str}
+    {"domain_bucket": str, "topic": str, "subject": str, "email_draft": str,
+     "resume_path": str}
 
 NEVER fabricate or pattern-guess an email address upstream of this script (e.g.
 firstname.lastname@domain). If a scraper couldn't find a real published address, leave
@@ -32,7 +33,9 @@ TITLE_PREFIXES = ("Sir", "Dame", "Dr.", "Dr", "Lord", "Prince")
 def salutation(name: str) -> str:
     """Strip any parenthetical disambiguator (e.g. two people sharing a name, tagged
     "Jane Doe (Dept A)" vs "Jane Doe (Dept B)" upstream) before it leaks into the
-    greeting — keep it in the spreadsheet's Name column, not in "Dear Prof. X (Dept A),"."""
+    greeting — keep it in the spreadsheet's Name column, not in
+    "Dear Prof. X (Dept A),".
+    """
     clean = re.sub(r"\s*\([^)]*\)\s*$", "", name).strip()
     parts = clean.split(" ", 1)
     if len(parts) == 2 and parts[0] in TITLE_PREFIXES:
@@ -68,7 +71,9 @@ def build_subject(domain_name: str, domain_cfg: dict, topic: str) -> str:
 def build_email(name: str, domain_name: str, domain_cfg: dict, topic: str, cfg: dict) -> str:
     s = cfg["sender"]
     opening = cfg["templates"]["opening"].format(
-        name=s["name"], degree=s["degree"], institution=s["institution"],
+        name=s["name"],
+        degree=s["degree"],
+        institution=s["institution"],
         headline_metric=s.get("headline_metric", ""),
     ).strip()
 
@@ -95,26 +100,58 @@ def build_email(name: str, domain_name: str, domain_cfg: dict, topic: str, cfg: 
         f"{closing}\n\n"
         f"Warm regards,\n{s['name']}\n{s['degree']}\n{s['institution']}"
     )
-    # never let an em/en dash slip into generated text (a small tell of AI-written mail)
+
+    # never let an em/en dash slip into generated text
     return body.replace("—", ", ").replace("–", ", ")
 
 
 def process(people: list, cfg: dict) -> list:
     domains = cfg["domains"]
+    resumes = cfg["resumes"]
+
     results = []
+
     for p in people:
         bio = p.get("bio") or ""
-        domain_name = classify(bio, domains, default=next(iter(domains))) if bio else next(iter(domains))
+
+        domain_name = (
+            classify(bio, domains, default=next(iter(domains)))
+            if bio
+            else next(iter(domains))
+        )
+
         domain_cfg = domains[domain_name]
+
         fallback = f"{domain_name.lower()} research"
-        topic = fallback if domain_cfg.get("weak_fit") else extract_topic(bio, fallback)
+        topic = (
+            fallback
+            if domain_cfg.get("weak_fit")
+            else extract_topic(bio, fallback)
+        )
+
+        resume_path = resumes.get(domain_name)
+
+        if not resume_path:
+            raise ValueError(
+                f"No resume configured for domain '{domain_name}'. "
+                f"Add it under 'resumes' in config.yaml."
+            )
+
         results.append({
             **p,
             "domain_bucket": domain_name,
             "topic": topic,
             "subject": build_subject(domain_name, domain_cfg, topic),
-            "email_draft": build_email(p["name"], domain_name, domain_cfg, topic, cfg),
+            "email_draft": build_email(
+                p["name"],
+                domain_name,
+                domain_cfg,
+                topic,
+                cfg,
+            ),
+            "resume_path": resume_path,
         })
+
     return results
 
 
@@ -125,13 +162,26 @@ def main():
     ap.add_argument("--output", required=True, help="output emails JSON")
     args = ap.parse_args()
 
-    people = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
+    people = json.loads(
+        Path(args.input).read_text(encoding="utf-8")
+    )
+
+    cfg = yaml.safe_load(
+        Path(args.config).read_text(encoding="utf-8")
+    )
+
     results = process(people, cfg)
-    Path(args.output).write_text(json.dumps(results, indent=1, ensure_ascii=False), encoding="utf-8")
+
+    Path(args.output).write_text(
+        json.dumps(results, indent=1, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     with_email = sum(1 for r in results if r.get("email"))
-    print(f"Processed {len(results)} people ({with_email} with a verified email).")
+    print(
+        f"Processed {len(results)} people "
+        f"({with_email} with a verified email)."
+    )
 
 
 if __name__ == "__main__":
