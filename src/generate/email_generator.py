@@ -44,66 +44,67 @@ def salutation(name: str) -> str:
 
 
 def build_background(domain_name: str, domain_cfg: dict, cfg: dict) -> str:
-    projects = {p["id"]: p["text"].strip() for p in cfg["flagship_projects"]}
+    projects = cfg["email_projects"]
     order = domain_cfg.get("lead_order") or list(projects.keys())
-    lead_text = projects[order[0]]
-    follow_text = projects[order[1]] if len(order) > 1 else ""
 
-    parts = [lead_text]
-    if follow_text:
-        parts.append(f"Separately, {follow_text}")
+    selected = [projects[project_id] for project_id in order[:2]]
 
-    sp_id = domain_cfg.get("secondary_project")
-    if sp_id:
-        sp_text = cfg["secondary_projects"].get(sp_id, "").strip()
-        if sp_text:
-            parts.append(sp_text)
-
-    return " ".join(parts)
+    return " and ".join(selected)
 
 
 def build_subject(domain_name: str, domain_cfg: dict, topic: str) -> str:
     if domain_cfg.get("weak_fit"):
-        return "Interest in collaborating with your research group"
-    return f"Interest in your research on {topic}"
+        return f"Research / Project Opportunities in {domain_name} | IIT Bombay"
+    return f"Research / Project Opportunities in {topic} | IIT Bombay"
 
 
 def build_email(name: str, domain_name: str, domain_cfg: dict, topic: str, cfg: dict) -> str:
     s = cfg["sender"]
+
     opening = cfg["templates"]["opening"].format(
         name=s["name"],
         degree=s["degree"],
         institution=s["institution"],
-        headline_metric=s.get("headline_metric", ""),
+        minor=s["minor"],
+        headline_metric=s["headline_metric"],
+        topic=topic,
+        natwest=s["natwest"],
+        cfa=s["cfa"],
     ).strip()
 
-    if domain_cfg.get("weak_fit"):
-        interest_line = (
-            f"I am writing to introduce myself and express interest in the research your "
-            f"group conducts in {topic}, and to explore whether there might be an "
-            f"opportunity for me to contribute."
-        )
-    else:
-        interest_line = (
-            f"I am writing to express my interest in working with you on research in "
-            f"{topic}, an area I would like to go considerably deeper into."
-        )
+    research_line = (
+        f"I have explored related areas through projects including "
+        f"{build_background(domain_name, domain_cfg, cfg)}, "
+        f"which have further strengthened my curiosity about research in this field."
+    )
 
-    background = build_background(domain_name, domain_cfg, cfg)
-    closing = cfg["templates"]["closing"].strip()
+    opportunity_line = (
+        "I wanted to ask if you might have any ongoing or upcoming "
+        "research/project opportunities or internships where I could contribute and learn. "
+        "I would be very keen to work on a project aligned with your research."
+    )
+
+    closing = cfg["templates"]["closing"].format(
+        name=s["name"],
+        degree=s["degree"],
+        institution=s["institution"],
+        minor=s["minor"],
+        iitb_email=s["iitb_email"],
+        personal_email=s["personal_email"],
+        phone=s["phone"],
+    ).strip()
 
     body = (
         f"{salutation(name)}\n\n"
-        f"I hope this message finds you well.\n\n"
-        f"{opening} {interest_line}\n\n"
-        f"{background}\n\n"
-        f"{closing}\n\n"
-        f"Warm regards,\n{s['name']}\n{s['degree']}\n{s['institution']}"
+        f"I hope you are doing well.\n\n"
+        f"{opening}\n\n"
+        f"{research_line}\n\n"
+        f"{opportunity_line}\n\n"
+        f"{closing}"
     )
 
     # never let an em/en dash slip into generated text
-    return body.replace("—", ", ").replace("–", ", ")
-
+    return body.replace("â€”", ", ").replace("â€“", ", ")
 
 def process(people: list, cfg: dict) -> list:
     domains = cfg["domains"]
@@ -163,7 +164,7 @@ def main():
     args = ap.parse_args()
 
     people = json.loads(
-        Path(args.input).read_text(encoding="utf-8")
+        Path(args.input).read_text(encoding="utf-8-sig")
     )
 
     cfg = yaml.safe_load(

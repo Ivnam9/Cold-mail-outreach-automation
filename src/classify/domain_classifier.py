@@ -83,7 +83,7 @@ TOPIC_PATTERNS = [
     r"research\s+(?:lies|lie)\s+at the intersection of\s+(.*?)(?:\.\s|,\s+with|$)",
     r"research interests? include\s+(.*?)(?:\.\s|,\s+including|$)",
     r"is broadly interested in\s+(.*?)(?:\.\s|,\s+with|$)",
-    r"is interested in\s+(.*?)(?:\.\s|$)",
+    r"(?:is interested in|I am interested in)\s+(.*?)(?:\.\s|$)",
 ]
 
 
