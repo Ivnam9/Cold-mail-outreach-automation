@@ -1,0 +1,53 @@
+send,name,email,subject,email_body,resume_path,timezone
+yes,Jamie Lin,jamie.lin@tradewavecapital.example,Internship / Project Opportunities in machine learning and reinforcement learning for systematic trading strategies at TradeWave Capital | IIT Bombay,"Dear Jamie Lin,
+
+I hope you are doing well.
+
+My name is Jordan Rivera, a B.Tech. Computer Science student at Example Institute of Technology, where I hold a CPI of 9.5. I am writing to express my interest in TradeWave Capital's work in machine learning and reinforcement learning for systematic trading strategies, and to explore whether there might be a remote internship or project opportunity where I could contribute.
+
+I have worked on related projects including a parameter-efficient fine-tuning project for language models and a biomedical deep learning classification project, which I believe are directly relevant to the work your team is doing.
+
+I understand TradeWave Capital supports remote internships, and I wanted to ask if there might be a remote internship or project opportunity where I could contribute and learn.
+
+I would welcome the opportunity to contribute to your ongoing research remotely, and I am glad to work flexibly around whatever timing suits your group best.
+
+My resume is attached for your reference. Thank you for your time and consideration. I look forward to hearing from you.",./resumes/ml_resume.pdf,America/Chicago
+yes,Morgan Price,morgan.price@payloop.example,Internship / Project Opportunities in CS at PayLoop Technologies | IIT Bombay,"Dear Morgan Price,
+
+I hope you are doing well.
+
+My name is Jordan Rivera, a B.Tech. Computer Science student at Example Institute of Technology, where I hold a CPI of 9.5. I am writing to express my interest in PayLoop Technologies's work in cs research, and to explore whether there might be a remote internship or project opportunity where I could contribute.
+
+I have worked on related projects including a parameter-efficient fine-tuning project for language models and a biomedical deep learning classification project, which I believe are directly relevant to the work your team is doing.
+
+I understand PayLoop Technologies supports remote internships, and I wanted to ask if there might be a remote internship or project opportunity where I could contribute and learn.
+
+I would welcome the opportunity to contribute to your ongoing research remotely, and I am glad to work flexibly around whatever timing suits your group best.
+
+My resume is attached for your reference. Thank you for your time and consideration. I look forward to hearing from you.",./resumes/general_resume.pdf,Europe/Dublin
+yes,Devika Rao,devika.rao@neuralforge.example,Internship / Project Opportunities in computer vision and natural language processing for document automation at NeuralForge AI | IIT Bombay,"Dear Devika Rao,
+
+I hope you are doing well.
+
+My name is Jordan Rivera, a B.Tech. Computer Science student at Example Institute of Technology, where I hold a CPI of 9.5. I am writing to express my interest in NeuralForge AI's work in computer vision and natural language processing for document automation, and to explore whether there might be a remote internship or project opportunity where I could contribute.
+
+I have worked on related projects including a parameter-efficient fine-tuning project for language models and a biomedical deep learning classification project, which I believe are directly relevant to the work your team is doing.
+
+I wanted to ask if NeuralForge AI might have any internship or project opportunities, remote or otherwise, where I could contribute and learn.
+
+I would welcome the opportunity to contribute to your ongoing research remotely, and I am glad to work flexibly around whatever timing suits your group best.
+
+My resume is attached for your reference. Thank you for your time and consideration. I look forward to hearing from you.",./resumes/ml_resume.pdf,Asia/Kolkata
+no,Alex Novak,,Internship / Project Opportunities in reinforcement learning and manipulation for warehouse robot control at Quanta Robotics | IIT Bombay,"Dear Alex Novak,
+
+I hope you are doing well.
+
+My name is Jordan Rivera, a B.Tech. Computer Science student at Example Institute of Technology, where I hold a CPI of 9.5. I am writing to express my interest in Quanta Robotics's work in reinforcement learning and manipulation for warehouse robot control, and to explore whether there might be a remote internship or project opportunity where I could contribute.
+
+I have worked on related projects including a biomedical deep learning classification project and a parameter-efficient fine-tuning project for language models, which I believe are directly relevant to the work your team is doing.
+
+I wanted to ask if Quanta Robotics might have any internship or project opportunities, remote or otherwise, where I could contribute and learn.
+
+I would welcome the opportunity to contribute to your ongoing research remotely, and I am glad to work flexibly around whatever timing suits your group best.
+
+My resume is attached for your reference. Thank you for your time and consideration. I look forward to hearing from you.",./resumes/ml_resume.pdf,America/Los_Angeles

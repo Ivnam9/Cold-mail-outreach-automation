@@ -3,6 +3,57 @@
 This is a longer write-up of how each stage works and why, for anyone adapting this to
 their own outreach campaign.
 
+## 0. University Mode vs Company Mode
+
+Every stage below (scrape → classify → generate → export → send) runs identically for both
+modes. The only thing that changes is a per-record `"mode"` field on the input JSON
+(`"university"`, the default when absent, or `"company"`) and, for company records, a few
+additional fields — nothing in `config.yaml`'s `domains`/`resumes` blocks, and nothing in
+`src/classify/`, `src/schedule/`, or `src/send/`, is mode-specific.
+
+**Why a per-record field instead of a CLI flag or a separate script:** a flag would force every
+batch to be pure-university or pure-company; a per-record field lets `email_generator.py`'s
+`process()` branch per person, so one input file could even mix both kinds (not required in
+practice, but it falls out for free and keeps the two modes from drifting into separate code
+paths that could silently diverge).
+
+**Company record fields**, superset of the university schema (`src/generate/email_generator.py`
+module docstring has the authoritative list): `mode: "company"`, `company` (required — raises
+`ValueError` if a `"company"`-mode record is missing it, the same way a missing `resume_path`
+config entry raises rather than silently guessing), `company_url`, plus the same
+`name`/`email`/`title`/`bio`/`timezone`/`source_url` fields a university record already has.
+
+**Remote-work evidence is preferred, never required, and never assumed.** Two optional fields,
+`remote_evidence` (a short quote/justification) and `remote_evidence_url` (the page it came
+from), drive a derived `remote_status` field on the generated record:
+
+- Both present → `remote_status: "Verified"`, and the generated email states the company
+  supports remote work as a known fact ("I understand {company} supports remote
+  internships...").
+- Either missing → `remote_status: "Unverified"`. The lead is *not* dropped — it's still a
+  legitimate outreach target — but the email asks an open question instead of asserting
+  anything ("I wanted to ask if {company} might have any internship or project opportunities,
+  remote or otherwise..."). The exported review workbook surfaces `remote_status` and
+  `remote_evidence`/`remote_evidence_url` in their own columns so a human reviewer can resolve
+  an `Unverified` lead (confirm it, find the missing evidence, or drop it) before approving the
+  batch — exactly the same "a human reads every email before anything sends" principle that
+  already governs the rest of this pipeline.
+
+This mirrors the existing "never fabricate an email address" rule one level up: a blank/missing
+field is honest, a guessed or assumed one is a liability — a bounced email just looks careless,
+but an email that falsely claims "I saw your remote internship program" when no such program
+was ever confirmed is worse, since it's a factual claim to a real company, not just a formatting
+mistake.
+
+**What's shared, not duplicated:** domain classification (`src/classify/domain_classifier.py`),
+topic extraction, flagship-project `lead_order` selection, and resume routing read a `bio` field
+and a `domains_cfg`/`resumes` config exactly the same way regardless of mode — a company's
+bio/description is classified into Finance/FinTech/AI_ML (or your own configured buckets)
+exactly like a professor's research bio. Only `salutation()`, `build_subject()`, and the
+opening/opportunity sentences inside `build_email()` branch on `mode`, because "Dear Prof. X, I
+am writing to express my interest in working with you on research in {topic}" doesn't read
+naturally addressed to a company contact about an internship.
+
 ## 1. Scrape
 
 The goal is a real, current research description per person — not their job title, and

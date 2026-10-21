@@ -3,12 +3,39 @@
 #
 # Everything under `sender` and `projects` is inserted verbatim into generated emails,
 # so write it exactly as you want a professor to read it.
+#
+# Two outreach modes (src/generate/email_generator.py), selected per PERSON RECORD via
+# an optional "mode" field in your professors.json / companies.json input — nothing
+# here in config.yaml selects the mode:
+#   "university" (default when "mode" is absent) — professor/researcher/lab outreach.
+#       Person record fields: name, email, title, bio, university, timezone,
+#       source_url. Unchanged from before Company Mode existed.
+#   "company" — startup/company outreach, for remote internships and project roles.
+#       Person record fields: name, email, title, bio, company, company_url, timezone,
+#       source_url, and optionally remote_evidence / remote_evidence_url (a quote and
+#       its source URL proving the company offers remote work — never guessed; if
+#       absent, the generated record is marked remote_status: "Unverified" rather than
+#       claiming remote eligibility). `company` is required for "mode": "company".
+# Both modes share the exact same `domains`/`resumes` config below (Finance/FinTech/
+# AI_ML classification, flagship-project lead_order, resume routing) — only the
+# salutation/subject/opening/opportunity wording differs (see `templates` below).
 
 sender:
   name: "Jordan Rivera"
   degree: "B.Tech. Computer Science"
   institution: "Example Institute of Technology"
   headline_metric: "CPI of 9.5"   # or GPA, or omit — whatever credibility line you open with
+  # The three fields below are always read by build_email() (src/generate/
+  # email_generator.py), even if your own opening/company_opening/closing text
+  # doesn't reference {minor}/{natwest}/{cfa} — a missing key raises KeyError, not a
+  # silently blank placeholder. Keep them, even as a short/empty-ish string, if your
+  # own templates don't use all three.
+  minor: "a Minor in Example Field"
+  natwest: "Example Corp as a Summer Intern in 2027"
+  cfa: "an example certification (e.g. CFA Level I)"
+  iitb_email: "jordan.rivera@example.edu"
+  personal_email: "jordan.rivera@example.com"
+  phone: "+1-555-010-0100"
 
 # Your 1-2 strongest projects. These appear in (almost) every email, ordered by
 # relevance to the recipient's domain bucket — see `lead_order` in each `domains` entry
@@ -26,6 +53,14 @@ flagship_projects:
       Under Prof. B. Mentor at my home institution, I built a deep learning model for a
       biomedical classification task, reaching 99%+ accuracy across dozens of categories
       and beating the prior published benchmark, work that earned a letter of recommendation.
+
+# Short phrase per flagship project, used inline in the generated email's own sentence
+# ("I have explored related areas through projects including X and Y..." — see
+# build_background() in src/generate/email_generator.py). Keys must match
+# flagship_projects ids above.
+email_projects:
+  project_a: "a parameter-efficient fine-tuning project for language models"
+  project_b: "a biomedical deep learning classification project"
 
 # Shorter, single-sentence project blurbs. Only the one matching the recipient's domain
 # bucket gets appended to the email (see `secondary_project` under each domain below).
@@ -48,6 +83,15 @@ secondary_projects:
 templates:
   opening: >
     My name is {name}, a {degree} student at {institution}, where I hold a {headline_metric}.
+
+  # Used instead of `opening` for Company Mode records (any person record with
+  # "mode": "company" — see email_generator.py). Same placeholders as `opening`,
+  # plus {company} and {topic}. `closing` below is shared by both modes unchanged.
+  company_opening: >
+    My name is {name}, a {degree} student at {institution}, where I hold a {headline_metric}.
+    I am writing to express my interest in {company}'s work in {topic}, and to explore
+    whether there might be a remote internship or project opportunity where I could contribute.
+
   # literal block ("|") preserves the blank line as an actual paragraph break — a
   # folded block (">") would collapse it to a single space/newline instead.
   closing: |

@@ -9,6 +9,44 @@ It does **not** try to blast generic mail-merge messages. The whole point is tha
 is written using the recipient's actual, current research description (not a job title, not a
 department label), and every batch is meant to be reviewed by a human before anything sends.
 
+## Two outreach modes
+
+Every person record carries an optional `"mode"` field:
+
+- **`"university"`** (the default — any record with no `"mode"` key behaves exactly as before
+  Company Mode existed): professors, researchers, labs.
+- **`"company"`**: startups/companies, for remote internships and project roles.
+
+Both modes share the *exact same* Finance/FinTech/AI_ML domain classification, topic
+extraction, flagship-project ordering, and resume routing (`config.yaml`'s `domains`/
+`resumes` blocks) — only the salutation, subject line, opening paragraph and "opportunity"
+sentence differ, since "Dear Prof. X, I'd like to work on your research" doesn't make sense
+addressed to a company contact. See `src/generate/email_generator.py`'s module docstring for
+the exact field-level differences, and `examples/sample_companies.json` /
+`examples/sample_company_batch.csv` for a worked example.
+
+**Company-record fields** (superset of the university schema): `mode: "company"`, `company`
+(required), `company_url`, `name`, `title`, `email`, `bio`, `source_url`, `timezone`, and
+optionally `remote_evidence` / `remote_evidence_url` — a quote and its source URL proving the
+company actually offers remote work. **Remote evidence is preferred, not required.** A lead
+with no evidence is still kept (never dropped for this reason alone) and the generated record
+is marked `remote_status: "Unverified"` rather than ever claiming remote eligibility that
+wasn't confirmed; `remote_status: "Verified"` only when both `remote_evidence` and
+`remote_evidence_url` are present. The exported review workbook (`src/export/build_workbook.py`)
+surfaces `Company` / `Remote Status` / `Remote Evidence` columns, left blank for University
+Mode rows, so an `Unverified` lead is easy to spot and resolve by hand before approving it.
+
+Only set `email` when it's actually published somewhere official — the "never fabricate or
+pattern-guess an email" rule applies identically to company contacts (no
+`firstname.lastname@company.com` guessing) and to `remote_evidence`/`remote_evidence_url`
+(never assert a company is remote-friendly without a real source backing it).
+
+Scheduling, sending, and duplicate-protection (`src/schedule/scheduling.py`,
+`src/send/send_batch.py`) are completely unmodified and mode-agnostic — they only ever see the
+generated CSV's `send/name/email/subject/email_body/resume_path/timezone` columns, the same
+Tuesday/Thursday recipient-local send window applies to both modes, and the per-batch sent-log
+dedup works identically either way.
+
 ## What it does
 
 1. **Scrape** — pull a faculty list plus each person's real research bio, institution, and IANA
@@ -111,6 +149,26 @@ python src/export/build_workbook.py --input data/emails.json --output Professors
 python src/send/send_batch.py --batch data/batch_01.csv
 ```
 
+### Selecting University vs Company Mode
+
+There's no separate command or flag — the mode is a per-record field in your input JSON (see
+"Two outreach modes" above). Steps 2-5 are identical either way:
+
+```bash
+# University Mode input: records with no "mode" field (or "mode": "university").
+python src/generate/email_generator.py \
+    --input data/professors.json --config config.yaml --output data/emails.json
+
+# Company Mode input: records with "mode": "company" and a "company" field.
+# See examples/sample_companies.json for the full fictional schema reference.
+python src/generate/email_generator.py \
+    --input data/companies.json --config config.yaml --output data/emails.json
+
+# A single input file may even mix both kinds of records — each is classified and
+# generated independently, and build_workbook.py groups by domain_bucket regardless
+# of mode (Company/Remote Status/Remote Evidence columns stay blank for university rows).
+```
+
 ## Repo layout
 
 ```
@@ -134,10 +192,15 @@ src/
 tests/
   test_scheduling.py        # timezone/DST/window/duplicate-day unit tests (fictional data only)
   test_send_batch.py        # scheduled/due filtering + duplicate-send-prevention tests
-  test_email_generator.py   # domain-specific resume routing tests
+  test_email_generator.py   # domain-specific resume routing tests (University Mode)
+  test_company_mode.py      # Company Mode generation, remote-evidence verification,
+                             # University Mode backward-compatibility regression
+  test_build_workbook.py    # review workbook's Company/Remote Status/Remote Evidence columns
 examples/
-  sample_professors.json    # a handful of fictional example records (schema reference)
-  sample_batch.csv          # a fictional example send-batch (schema reference)
+  sample_professors.json    # a handful of fictional University Mode example records
+  sample_batch.csv          # a fictional University Mode example send-batch
+  sample_companies.json     # a handful of fictional Company Mode example records
+  sample_company_batch.csv  # a fictional Company Mode example send-batch
 docs/
   PIPELINE.md                # longer write-up of the methodology and lessons learned
 ```
@@ -150,9 +213,12 @@ python -m unittest discover -s tests -v
 
 Covers timezone conversion (including DST transitions), the Tuesday/Thursday + 7:30-9:30 AM
 local-time window across several different recipient timezones, which rows count as "due"
-right now, duplicate-send prevention across re-runs, and domain-specific resume routing.
-Everything runs against fictional sample data and never opens a network connection or SMTP
-session — no real email is ever sent by the test suite.
+right now, duplicate-send prevention across re-runs, domain-specific resume routing, Company
+Mode email generation (salutation/subject/opening/opportunity wording, remote-evidence
+verification, missing-`company`-field/unknown-`mode` validation), the review workbook's new
+columns, and that University Mode output is byte-identical whether a record's `mode` field is
+absent or explicitly `"university"`. Everything runs against fictional sample data and never
+opens a network connection or SMTP session — no real email is ever sent by the test suite.
 
 ## What's *not* in this repo
 

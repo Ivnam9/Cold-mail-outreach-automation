@@ -18,6 +18,9 @@ HEADERS = [
     "Designation",
     "Research Description",
     "University",
+    "Company",
+    "Remote Status",
+    "Remote Evidence",
     "Timezone",
     "Subject",
     "Personalized Email",
@@ -30,10 +33,13 @@ COLUMN_WIDTHS = {
     "C": 38,
     "D": 70,
     "E": 30,
-    "F": 22,
-    "G": 45,
-    "H": 100,
-    "I": 65,
+    "F": 24,
+    "G": 16,
+    "H": 50,
+    "I": 22,
+    "J": 45,
+    "K": 100,
+    "L": 65,
 }
 
 HEADER_FILL = PatternFill(
@@ -66,12 +72,25 @@ def build(records: list, out_path: str) -> None:
             cell.font = HEADER_FONT
 
         for r in rows:
+            # Company/Remote Status/Remote Evidence are only ever set on Company
+            # Mode records (see email_generator.py) — they render blank for
+            # University Mode rows, which never carry these fields.
+            remote_evidence = r.get("remote_evidence") or ""
+            remote_evidence_url = r.get("remote_evidence_url") or ""
+            if remote_evidence and remote_evidence_url:
+                remote_evidence_cell = f"{remote_evidence} ({remote_evidence_url})"
+            else:
+                remote_evidence_cell = remote_evidence or remote_evidence_url
+
             ws.append([
                 r.get("name", ""),
                 r.get("email") or "",
                 r.get("title", ""),
                 r.get("bio", ""),
                 r.get("university", ""),
+                r.get("company", ""),
+                r.get("remote_status", ""),
+                remote_evidence_cell,
                 r.get("timezone", ""),
                 r.get("subject", ""),
                 r.get("email_draft", ""),

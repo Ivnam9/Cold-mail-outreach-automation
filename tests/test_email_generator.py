@@ -22,11 +22,25 @@ def make_config():
             "degree": "B.Tech. Computer Science",
             "institution": "Example Institute of Technology",
             "headline_metric": "CPI of 9.5",
+            # build_email() always reads these via s["..."], even though neither
+            # `opening` nor `closing` below references them as {placeholders} -
+            # str.format() only raises on a referenced-but-missing key, but the code
+            # looks these up in the sender dict unconditionally before formatting.
+            "minor": "a Minor in Example Field",
+            "natwest": "Example Corp as a Summer Intern in 2027",
+            "cfa": "an example certification",
+            "iitb_email": "jordan.rivera@example.edu",
+            "personal_email": "jordan.rivera@example.com",
+            "phone": "+1-555-010-0100",
         },
         "flagship_projects": [
             {"id": "project_a", "text": "Flagship project A description."},
             {"id": "project_b", "text": "Flagship project B description."},
         ],
+        "email_projects": {
+            "project_a": "a flagship A project",
+            "project_b": "a flagship B project",
+        },
         "secondary_projects": {},
         "templates": {
             "opening": "My name is {name}, a {degree} student at {institution}.",

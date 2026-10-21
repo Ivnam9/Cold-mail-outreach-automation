@@ -1,0 +1,54 @@
+[
+  {
+    "name": "Jamie Lin",
+    "email": "jamie.lin@tradewavecapital.example",
+    "title": "Head of Quantitative Research",
+    "bio": "Research interests include machine learning and reinforcement learning for systematic trading strategies. Head of Quantitative Research at TradeWave Capital, overseeing a small quant research team.",
+    "company": "TradeWave Capital",
+    "company_url": "https://tradewavecapital.example",
+    "timezone": "America/Chicago",
+    "source_url": "https://tradewavecapital.example/team",
+    "mode": "company",
+    "remote_evidence": "Careers page states: \"All research roles, including internships, are remote-first.\"",
+    "remote_evidence_url": "https://tradewavecapital.example/careers"
+  },
+  {
+    "name": "Morgan Price",
+    "email": "morgan.price@payloop.example",
+    "title": "Engineering Manager, Payments Platform",
+    "bio": "Research interests include systems and security for large-scale payments infrastructure. Engineering Manager, Payments Platform at PayLoop Technologies, working on fraud detection and payments rails for small-business merchants.",
+    "company": "PayLoop Technologies",
+    "company_url": "https://payloop.example",
+    "timezone": "Europe/Dublin",
+    "source_url": "https://payloop.example/about/team",
+    "mode": "company",
+    "remote_evidence": "Open job posting for \"Software Engineering Intern\" lists the location as \"Remote (EU timezones)\".",
+    "remote_evidence_url": "https://payloop.example/careers/swe-intern"
+  },
+  {
+    "name": "Devika Rao",
+    "email": "devika.rao@neuralforge.example",
+    "title": "Co-founder & ML Lead",
+    "bio": "Research interests include computer vision and natural language processing for document automation. Co-founder & ML Lead at NeuralForge AI, building a transformer-based extraction pipeline.",
+    "company": "NeuralForge AI",
+    "company_url": "https://neuralforge.example",
+    "timezone": "Asia/Kolkata",
+    "source_url": "https://neuralforge.example/team",
+    "mode": "company",
+    "remote_evidence": null,
+    "remote_evidence_url": null
+  },
+  {
+    "name": "Alex Novak",
+    "email": null,
+    "title": "Talent Partner",
+    "bio": "Research interests include reinforcement learning and manipulation for warehouse robot control. Talent Partner hiring for a robotics team at Quanta Robotics.",
+    "company": "Quanta Robotics",
+    "company_url": "https://quantarobotics.example",
+    "timezone": "America/Los_Angeles",
+    "source_url": "https://quantarobotics.example/careers",
+    "mode": "company",
+    "remote_evidence": null,
+    "remote_evidence_url": null
+  }
+]
