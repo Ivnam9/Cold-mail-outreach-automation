@@ -177,8 +177,7 @@ class TestCompanyModeSalutationAndSubject(unittest.TestCase):
     def test_company_subject_names_company_and_says_internship(self):
         cfg = make_config()
         row = process([make_company_person()], cfg)[0]
-        self.assertIn("Example Capital", row["subject"])
-        self.assertIn("Internship", row["subject"])
+        self.assertEqual(row["subject"], "Remote Internship Inquiry | Example Capital | IIT Bombay")
         self.assertNotIn("Research / Project Opportunities", row["subject"])
 
     def test_company_email_opens_with_plain_name(self):
@@ -260,12 +259,18 @@ class TestDomainClassificationAndResumeRoutingSharedAcrossModes(unittest.TestCas
 class TestBuildSubjectDirectly(unittest.TestCase):
     """build_subject() in isolation (no process()/classify() involved)."""
 
-    def test_weak_fit_company_subject_uses_domain_name_not_topic(self):
-        domain_cfg = {"weak_fit": True}
-        subject = build_subject("AI_ML", domain_cfg, "some topic", mode="company", company="Acme")
-        self.assertIn("AI_ML", subject)
-        self.assertIn("Acme", subject)
-        self.assertNotIn("some topic", subject)
+    def test_company_subject_fixed_format_regardless_of_weak_fit(self):
+        """Unlike University Mode, the company subject never varies with domain fit,
+        topic, or weak_fit — it's a fixed inquiry format naming only the company."""
+        weak_fit_cfg = {"weak_fit": True}
+        strong_fit_cfg = {"weak_fit": False}
+        subject_weak = build_subject("AI_ML", weak_fit_cfg, "some topic", mode="company", company="Acme")
+        subject_strong = build_subject("AI_ML", strong_fit_cfg, "some topic", mode="company", company="Acme")
+        expected = "Remote Internship Inquiry | Acme | IIT Bombay"
+        self.assertEqual(subject_weak, expected)
+        self.assertEqual(subject_strong, expected)
+        self.assertNotIn("AI_ML", subject_weak)
+        self.assertNotIn("some topic", subject_weak)
 
     def test_default_mode_is_university(self):
         subject = build_subject("AI_ML", {}, "neural networks")

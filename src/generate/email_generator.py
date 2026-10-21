@@ -85,8 +85,10 @@ def build_subject(
     company: str = None,
 ) -> str:
     if mode == "company":
-        label = domain_name if domain_cfg.get("weak_fit") else topic
-        return f"Internship / Project Opportunities in {label} at {company} | IIT Bombay"
+        # Fixed format regardless of domain fit/weak_fit — this is an inquiry from the
+        # sender, not a claim the company has advertised a remote opening, so it never
+        # varies based on what we could or couldn't verify about the role itself.
+        return f"Remote Internship Inquiry | {company} | IIT Bombay"
     if domain_cfg.get("weak_fit"):
         return f"Research / Project Opportunities in {domain_name} | IIT Bombay"
     return f"Research / Project Opportunities in {topic} | IIT Bombay"
